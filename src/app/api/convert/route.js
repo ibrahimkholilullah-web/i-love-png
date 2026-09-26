@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
+import * as pdfjsLib from 'pdfjs-dist/build/pdf.mjs';
 
 export async function POST(req) {
   try {
