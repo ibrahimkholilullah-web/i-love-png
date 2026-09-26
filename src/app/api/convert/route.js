@@ -21,7 +21,6 @@ export async function POST(req) {
       const page = await pdfDocument.getPage(pageNum);
       const viewport = page.getViewport({ scale: 2.0 });
 
-      // Canvas তৈরি না করে সিম্পল ডেটা মেমোরি পেজ তথ্য সংগৃহীত
       const canvas = {
         width: viewport.width,
         height: viewport.height,
