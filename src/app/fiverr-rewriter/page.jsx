@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import { 
   ShieldCheck, 
   Zap, 
@@ -15,6 +16,10 @@ import {
   Sparkles,
   RefreshCw
 } from 'lucide-react';
+
+const SUPABASE_URL = 'https://osmwbhutgeyommforopj.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_dRQFcOENpKDdEeFuZFrw8A_TgSfwMXK';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const RESTRICTED_WORDS_MAP = {
   'star': 'star',
@@ -101,24 +106,17 @@ export default function FiverrRewriter() {
   const [totalRewrittenCount, setTotalRewrittenCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Global namespace & key for shared counting across all browsers
-  const NAMESPACE = 'fiverr_rewriter_app_global_2026';
-  const KEY = 'total_rewritten_count';
-
-  // Fetch count on initial load
   useEffect(() => {
     const fetchGlobalCount = async () => {
       try {
-        const res = await fetch(`https://api.countapi.xyz/get/${NAMESPACE}/${KEY}`);
-        const data = await res.json();
-        
-        if (data && typeof data.value === 'number') {
-          setTotalRewrittenCount(data.value);
-        } else {
-          // Create the key if it doesn't exist yet
-          const createRes = await fetch(`https://api.countapi.xyz/create?namespace=${NAMESPACE}&key=${KEY}&value=0`);
-          const createData = await createRes.json();
-          setTotalRewrittenCount(createData.value || 0);
+        const { data, error } = await supabase
+          .from('counters')
+          .select('count')
+          .eq('name', 'total_messages')
+          .single();
+
+        if (data && typeof data.count === 'number') {
+          setTotalRewrittenCount(data.count);
         }
       } catch (error) {
         console.error('Failed to fetch global count:', error);
@@ -172,15 +170,18 @@ export default function FiverrRewriter() {
     setReplacedCount(count);
     setReplacedWords(Array.from(detectedWords));
 
-    // Increment global count across all browsers
     try {
-      const res = await fetch(`https://api.countapi.xyz/hit/${NAMESPACE}/${KEY}`);
-      const data = await res.json();
-      if (data && typeof data.value === 'number') {
-        setTotalRewrittenCount(data.value);
+      const newCount = totalRewrittenCount + 1;
+      const { error } = await supabase
+        .from('counters')
+        .update({ count: newCount })
+        .eq('name', 'total_messages');
+
+      if (!error) {
+        setTotalRewrittenCount(newCount);
       }
     } catch (error) {
-      setTotalRewrittenCount((prev) => prev + 1);
+      console.error('Failed to update global count:', error);
     }
   };
 
@@ -223,20 +224,16 @@ export default function FiverrRewriter() {
   return (
     <div className="w-full bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans">
       
-      {/* Background Glows */}
       <div className="absolute top-10 left-10 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
       <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
 
-      {/* Main Container */}
       <div className="w-full max-w-5xl mx-auto z-10 flex flex-col items-center my-auto">
         
-        {/* Dynamic Global Counter Badge */}
         <div className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-semibold text-blue-400">
           <RefreshCw size={14} className={`text-blue-400 ${isLoading ? 'animate-spin' : ''}`} />
           <span>{totalRewrittenCount.toLocaleString()} messages rewritten</span>
         </div>
 
-        {/* Header Title */}
         <div className="text-center mb-6 sm:mb-8 w-full">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-3 bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-blue-200 leading-tight">
             Rewrite Fiverr Messages <span className="text-blue-400">Without Risk</span>
@@ -245,7 +242,6 @@ export default function FiverrRewriter() {
             Automatically replace restricted keywords in your Fiverr messages to keep your account safe from warnings or bans.
           </p>
 
-          {/* Feature Badges */}
           <div className="mt-6 flex flex-wrap justify-center gap-2 sm:gap-3 text-xs text-slate-300">
             <span className="px-3 py-1.5 rounded-lg bg-slate-900 border border-white/10 flex items-center gap-1.5 shadow-sm">
               <ShieldCheck size={14} className="text-emerald-400" /> Safe
@@ -259,12 +255,10 @@ export default function FiverrRewriter() {
           </div>
         </div>
 
-        {/* Card Window */}
         <div className="w-full bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl relative">
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
             
-            {/* Original Input Box */}
             <div className="flex flex-col bg-slate-950/60 border border-white/10 rounded-xl p-4 transition-all focus-within:border-blue-500/50">
               <div className="flex justify-between items-center mb-2 pb-2 border-b border-white/5">
                 <span className="text-xs font-semibold text-slate-300 flex items-center gap-2">
@@ -294,12 +288,10 @@ export default function FiverrRewriter() {
               </div>
             </div>
 
-            {/* Center Arrow Icon */}
             <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-blue-600 rounded-full items-center justify-center border-2 border-slate-900 shadow-xl text-white">
               <ArrowRight size={18} />
             </div>
 
-            {/* Rewritten Output Box */}
             <div className="flex flex-col bg-slate-950/60 border border-white/10 rounded-xl p-4">
               <div className="flex justify-between items-center mb-2 pb-2 border-b border-white/5">
                 <span className="text-xs font-semibold text-emerald-400 flex items-center gap-2">
@@ -328,7 +320,6 @@ export default function FiverrRewriter() {
 
           </div>
 
-          {/* Action Row */}
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <button
               onClick={handleRewrite}
@@ -370,7 +361,6 @@ export default function FiverrRewriter() {
             </div>
           </div>
 
-          {/* Replaced Keywords List Box */}
           {replacedCount > 0 && (
             <div className="mt-5 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-200 flex flex-col gap-2">
               <div className="flex items-center gap-2 text-xs font-semibold text-red-400">
