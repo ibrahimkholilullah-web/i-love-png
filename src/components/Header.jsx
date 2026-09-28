@@ -16,6 +16,7 @@ export default function Header() {
   const navLinks = [
     { href: '/', label: 'PDF to JPG' },
     { href: '/fiverr-rewriter', label: 'Fiverr Rewriter' },
+     { href: '/conversation', label: 'Message' },
   ];
 
   return (
